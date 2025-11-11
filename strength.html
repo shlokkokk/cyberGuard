@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Password Strength Analyzer - CyberGuard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.2/echarts.min.js"></script>
+    <script src="https://unpkg.com/splitting@1.0.6/dist/splitting.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/splitting@1.0.6/dist/splitting.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #0a0a0a;
+            --secondary-bg: #1a1a1a;
+            --accent-green: #00ff41;
+            --accent-blue: #00d4ff;
+            --warning-orange: #ff6b35;
+            --error-red: #ff073a;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .cursor-glow {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-green) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: screen;
+            transition: transform 0.1s ease;
+        }
+
+        .terminal-container {
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--accent-green);
+            border-radius: 12px;
+            box-shadow: 0 0 40px rgba(0, 255, 65, 0.2);
+        }
+
+        .neon-text {
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 10px var(--accent-green), 0 0 20px var(--accent-green), 0 0 30px var(--accent-green);
+        }
+
+        .terminal-text {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .hacker-input {
+            background: rgba(0, 0, 0, 0.8);
+            border: 2px solid var(--accent-green);
+            border-radius: 8px;
+            padding: 16px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 18px;
+            color: var(--text-primary);
+            width: 100%;
+            transition: all 0.3s ease;
+        }
+
+        .hacker-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 20px rgba(0, 212, 255, 0.3);
+        }
+
+        .strength-meter {
+            height: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .strength-fill {
+            height: 100%;
+            border-radius: 6px;
+            transition: all 0.5s ease;
+            position: relative;
+        }
+
+        .strength-fill::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 2s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .criteria-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            margin: 8px 0;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        .criteria-item.met {
+            background: rgba(0, 255, 65, 0.1);
+            border-color: var(--accent-green);
+        }
+
+        .criteria-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .criteria-icon.met {
+            background: var(--accent-green);
+            color: black;
+        }
+
+        .criteria-icon.not-met {
+            background: var(--error-red);
+            color: white;
+        }
+
+        .hacker-button {
+            background: linear-gradient(45deg, var(--accent-green), var(--accent-blue));
+            border: none;
+            border-radius: 8px;
+            padding: 16px 32px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--primary-bg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hacker-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 255, 65, 0.4);
+        }
+
+        .hacker-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .password-display {
+            position: relative;
+        }
+
+        .toggle-password {
+            position: absolute;
+            right: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: var(--accent-green);
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .analysis-results {
+            background: rgba(0, 0, 0, 0.6);
+            border-radius: 12px;
+            padding: 24px;
+            margin-top: 24px;
+            border: 1px solid rgba(0, 255, 65, 0.3);
+        }
+
+        .strength-legend {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .chart-container {
+            height: 300px;
+            margin-top: 24px;
+        }
+
+        @media (max-width: 768px) {
+            .terminal-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor-glow"></div>
+
+    <!-- Matrix Background -->
+    <div class="matrix-bg" id="matrix-canvas"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md border-b border-green-500">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="neon-text text-2xl font-bold">CyberGuard</div>
+                <div class="flex space-x-6">
+                    <a href="index.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">HOME</a>
+                    <a href="strength.html" class="terminal-text text-green-400 hover:text-green-300 transition-colors">STRENGTH</a>
+                    <a href="vault.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">VAULT</a>
+                    <a href="dashboard.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">DASHBOARD</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="min-h-screen pt-20 pb-12">
+        <div class="container mx-auto px-6">
+            <div class="terminal-container max-w-6xl mx-auto p-8">
+                <!-- Header -->
+                <div class="text-center mb-12">
+                    <h1 class="neon-text text-4xl font-bold mb-4">Password Strength Analyzer</h1>
+                    <p class="terminal-text text-gray-400">Advanced security analysis with real-time feedback</p>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-12">
+                    <!-- Left Column - Input & Analysis -->
+                    <div>
+                        <!-- Password Input -->
+                        <div class="mb-8">
+                            <label class="terminal-text block text-lg font-bold mb-4 text-green-400">Enter Password</label>
+                            <div class="password-display">
+                                <input 
+                                    type="password" 
+                                    id="password-input" 
+                                    class="hacker-input" 
+                                    placeholder="Type your password here..."
+                                    autocomplete="off"
+                                >
+                                <button class="toggle-password" onclick="togglePasswordVisibility()">
+                                    <svg id="eye-icon" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                                        <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Strength Meter -->
+                        <div class="mb-8">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="terminal-text text-sm font-bold">Strength Level</span>
+                                <span id="strength-text" class="terminal-text text-sm font-bold">No Password</span>
+                            </div>
+                            <div class="strength-meter">
+                                <div id="strength-fill" class="strength-fill" style="width: 0%; background: var(--error-red);"></div>
+                            </div>
+                            <div class="strength-legend">
+                                <span>Very Weak</span>
+                                <span>Weak</span>
+                                <span>Medium</span>
+                                <span>Strong</span>
+                                <span>Very Strong</span>
+                            </div>
+                        </div>
+
+                        <!-- Criteria Checklist -->
+                        <div class="mb-8">
+                            <h3 class="terminal-text text-lg font-bold mb-4 text-blue-400">Security Criteria</h3>
+                            <div id="criteria-list">
+                                <div class="criteria-item" id="length-criteria">
+                                    <div class="criteria-icon not-met">✗</div>
+                                    <span>At least 8 characters long</span>
+                                </div>
+                                <div class="criteria-item" id="uppercase-criteria">
+                                    <div class="criteria-icon not-met">✗</div>
+                                    <span>Contains uppercase letters</span>
+                                </div>
+                                <div class="criteria-item" id="lowercase-criteria">
+                                    <div class="criteria-icon not-met">✗</div>
+                                    <span>Contains lowercase letters</span>
+                                </div>
+                                <div class="criteria-item" id="number-criteria">
+                                    <div class="criteria-icon not-met">✗</div>
+                                    <span>Contains numbers</span>
+                                </div>
+                                <div class="criteria-item" id="special-criteria">
+                                    <div class="criteria-icon not-met">✗</div>
+                                    <span>Contains special characters</span>
+                                </div>
+                                <div class="criteria-item" id="common-criteria">
+                                    <div class="criteria-icon not-met">✗</div>
+                                    <span>Not a common password</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-4">
+                            <button id="analyze-btn" class="hacker-button flex-1" onclick="analyzePassword()" disabled>
+                                ANALYZE SECURITY
+                            </button>
+                            <button id="encrypt-btn" class="hacker-button flex-1" onclick="encryptCurrentPassword()" disabled>
+                                ENCRYPT PASSWORD
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Right Column - Visualization -->
+                    <div>
+                        <div class="analysis-results">
+                            <h3 class="terminal-text text-xl font-bold mb-6 text-green-400">Analysis Results</h3>
+                            
+                            <!-- Detailed Metrics -->
+                            <div class="space-y-4 mb-6">
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Entropy:</span>
+                                    <span id="entropy-value" class="terminal-text font-bold">0 bits</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Crack Time:</span>
+                                    <span id="crack-time" class="terminal-text font-bold">Instant</span>
+                                </div>
+                                <div class="flex justify-between">
+                                    <span class="text-gray-400">Score:</span>
+                                    <span id="security-score" class="terminal-text font-bold">0/100</span>
+                                </div>
+                            </div>
+
+                            <!-- Strength Chart -->
+                            <div class="chart-container" id="strength-chart"></div>
+
+                            <!-- Recommendations -->
+                            <div id="recommendations" class="mt-6">
+                                <h4 class="terminal-text text-lg font-bold mb-3 text-orange-400">Recommendations</h4>
+                                <ul id="recommendations-list" class="space-y-2 text-sm text-gray-300">
+                                    <li>• Enter a password to see recommendations</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Matrix Background Animation
+        let matrixSketch = function(p) {
+            let drops = [];
+            let matrixChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%+-/~{[}]|\'";
+            
+            p.setup = function() {
+                let canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                canvas.parent('matrix-canvas');
+                
+                let cols = p.width / 14;
+                for (let i = 0; i < cols; i++) {
+                    drops[i] = p.random(-100, 0);
+                }
+            };
+            
+            p.draw = function() {
+                p.background(10, 10, 10, 25);
+                p.fill(0, 255, 65, 150);
+                p.textFont('JetBrains Mono');
+                p.textSize(14);
+                
+                for (let i = 0; i < drops.length; i++) {
+                    let char = matrixChars.charAt(p.floor(p.random(matrixChars.length)));
+                    p.text(char, i * 14, drops[i] * 20);
+                    
+                    if (drops[i] * 20 > p.height && p.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            };
+            
+            p.windowResized = function() {
+                p.resizeCanvas(p.windowWidth, p.windowHeight);
+            };
+        };
+        
+        new p5(matrixSketch);
+
+        // Custom Cursor
+        document.addEventListener('mousemove', (e) => {
+            const cursorGlow = document.querySelector('.cursor-glow');
+            cursorGlow.style.left = e.clientX - 10 + 'px';
+            cursorGlow.style.top = e.clientY - 10 + 'px';
+        });
+
+        // Password visibility toggle
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password-input');
+            const eyeIcon = document.getElementById('eye-icon');
+            
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                eyeIcon.innerHTML = '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2z"/>';
+            } else {
+                passwordInput.type = 'password';
+                eyeIcon.innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>';
+            }
+        }
+
+        // Password strength analysis
+        const commonPasswords = [
+            'password', '123456', '123456789', 'qwerty', 'abc123', 'password123',
+            'admin', 'letmein', 'welcome', 'monkey', '1234567890', 'password1',
+            'qwerty123', 'dragon', 'master', 'hello', 'login', 'princess'
+        ];
+
+        function calculatePasswordStrength(password) {
+            let score = 0;
+            let criteria = {
+                length: password.length >= 8,
+                uppercase: /[A-Z]/.test(password),
+                lowercase: /[a-z]/.test(password),
+                numbers: /[0-9]/.test(password),
+                special: /[^A-Za-z0-9]/.test(password),
+                common: !commonPasswords.includes(password.toLowerCase())
+            };
+
+            // Length scoring
+            if (password.length >= 8) score += 20;
+            if (password.length >= 12) score += 10;
+            if (password.length >= 16) score += 10;
+
+            // Character variety scoring
+            if (criteria.uppercase) score += 15;
+            if (criteria.lowercase) score += 15;
+            if (criteria.numbers) score += 15;
+            if (criteria.special) score += 15;
+
+            // Common password penalty
+            if (!criteria.common) score -= 50;
+
+            // Calculate entropy
+            let charset = 0;
+            if (criteria.lowercase) charset += 26;
+            if (criteria.uppercase) charset += 26;
+            if (criteria.numbers) charset += 10;
+            if (criteria.special) charset += 32;
+            
+            const entropy = password.length * Math.log2(charset);
+
+            // Calculate crack time (simplified)
+            let crackTime = 'Instant';
+            if (entropy > 30) crackTime = 'Centuries';
+            else if (entropy > 25) crackTime = 'Years';
+            else if (entropy > 20) crackTime = 'Months';
+            else if (entropy > 15) crackTime = 'Days';
+            else if (entropy > 10) crackTime = 'Hours';
+
+            return {
+                score: Math.max(0, Math.min(100, score)),
+                entropy: Math.round(entropy),
+                crackTime,
+                criteria
+            };
+        }
+
+        function updateStrengthDisplay(password) {
+            const analysis = calculatePasswordStrength(password);
+            const strengthFill = document.getElementById('strength-fill');
+            const strengthText = document.getElementById('strength-text');
+            const entropyValue = document.getElementById('entropy-value');
+            const crackTime = document.getElementById('crack-time');
+            const securityScore = document.getElementById('security-score');
+
+            // Update strength meter
+            strengthFill.style.width = analysis.score + '%';
+            
+            if (analysis.score < 20) {
+                strengthFill.style.background = 'var(--error-red)';
+                strengthText.textContent = 'Very Weak';
+                strengthText.style.color = 'var(--error-red)';
+            } else if (analysis.score < 40) {
+                strengthFill.style.background = 'var(--warning-orange)';
+                strengthText.textContent = 'Weak';
+                strengthText.style.color = 'var(--warning-orange)';
+            } else if (analysis.score < 60) {
+                strengthFill.style.background = '#ffd700';
+                strengthText.textContent = 'Medium';
+                strengthText.style.color = '#ffd700';
+            } else if (analysis.score < 80) {
+                strengthFill.style.background = 'var(--accent-blue)';
+                strengthText.textContent = 'Strong';
+                strengthText.style.color = 'var(--accent-blue)';
+            } else {
+                strengthFill.style.background = 'var(--accent-green)';
+                strengthText.textContent = 'Very Strong';
+                strengthText.style.color = 'var(--accent-green)';
+            }
+
+            // Update metrics
+            entropyValue.textContent = analysis.entropy + ' bits';
+            crackTime.textContent = analysis.crackTime;
+            securityScore.textContent = analysis.score + '/100';
+
+            // Update criteria
+            updateCriteria(analysis.criteria);
+
+            // Update recommendations
+            updateRecommendations(analysis.criteria, password);
+
+            // Update chart
+            updateStrengthChart(analysis);
+
+            // Enable/disable buttons
+            document.getElementById('analyze-btn').disabled = !password;
+            document.getElementById('encrypt-btn').disabled = !password;
+        }
+
+        function updateCriteria(criteria) {
+            const criteriaItems = [
+                { id: 'length-criteria', met: criteria.length },
+                { id: 'uppercase-criteria', met: criteria.uppercase },
+                { id: 'lowercase-criteria', met: criteria.lowercase },
+                { id: 'number-criteria', met: criteria.numbers },
+                { id: 'special-criteria', met: criteria.special },
+                { id: 'common-criteria', met: criteria.common }
+            ];
+
+            criteriaItems.forEach(item => {
+                const element = document.getElementById(item.id);
+                const icon = element.querySelector('.criteria-icon');
+                
+                if (item.met) {
+                    element.classList.add('met');
+                    icon.classList.add('met');
+                    icon.classList.remove('not-met');
+                    icon.textContent = '✓';
+                } else {
+                    element.classList.remove('met');
+                    icon.classList.remove('met');
+                    icon.classList.add('not-met');
+                    icon.textContent = '✗';
+                }
+            });
+        }
+
+        function updateRecommendations(criteria, password) {
+            const recommendations = [];
+            
+            if (!criteria.length) recommendations.push('• Use at least 8 characters');
+            if (!criteria.uppercase) recommendations.push('• Include uppercase letters (A-Z)');
+            if (!criteria.lowercase) recommendations.push('• Include lowercase letters (a-z)');
+            if (!criteria.numbers) recommendations.push('• Add numbers (0-9)');
+            if (!criteria.special) recommendations.push('• Include special characters (!@#$%)');
+            if (!criteria.common) recommendations.push('• Avoid common passwords');
+            
+            if (password.length > 0 && password.length < 12) {
+                recommendations.push('• Consider using 12+ characters for better security');
+            }
+
+            const list = document.getElementById('recommendations-list');
+            if (recommendations.length === 0) {
+                list.innerHTML = '<li class="text-green-400">• Excellent password! Your security is strong.</li>';
+            } else {
+                list.innerHTML = recommendations.join('<br>');
+            }
+        }
+
+        function updateStrengthChart(analysis) {
+            const chart = echarts.init(document.getElementById('strength-chart'));
+            
+            const option = {
+                backgroundColor: 'transparent',
+                textStyle: {
+                    color: '#ffffff'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    borderColor: '#00ff41',
+                    textStyle: {
+                        color: '#ffffff'
+                    }
+                },
+                series: [{
+                    name: 'Password Strength',
+                    type: 'radar',
+                    data: [{
+                        value: [
+                            analysis.criteria.length ? 100 : 0,
+                            analysis.criteria.uppercase ? 100 : 0,
+                            analysis.criteria.lowercase ? 100 : 0,
+                            analysis.criteria.numbers ? 100 : 0,
+                            analysis.criteria.special ? 100 : 0,
+                            analysis.criteria.common ? 100 : 0
+                        ],
+                        name: 'Current Password',
+                        itemStyle: {
+                            color: '#00ff41'
+                        },
+                        areaStyle: {
+                            color: 'rgba(0, 255, 65, 0.2)'
+                        }
+                    }]
+                }],
+                radar: {
+                    indicator: [
+                        { name: 'Length', max: 100 },
+                        { name: 'Uppercase', max: 100 },
+                        { name: 'Lowercase', max: 100 },
+                        { name: 'Numbers', max: 100 },
+                        { name: 'Special', max: 100 },
+                        { name: 'Unique', max: 100 }
+                    ],
+                    axisLine: {
+                        lineStyle: {
+                            color: '#333'
+                        }
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: '#333'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#ffffff'
+                    }
+                }
+            };
+            
+            chart.setOption(option);
+        }
+
+        // Real-time analysis
+        document.getElementById('password-input').addEventListener('input', (e) => {
+            updateStrengthDisplay(e.target.value);
+        });
+
+        function analyzePassword() {
+            const password = document.getElementById('password-input').value;
+            if (!password) return;
+            
+            // Add visual feedback
+            const button = document.getElementById('analyze-btn');
+            button.textContent = 'ANALYZING...';
+            button.disabled = true;
+            
+            setTimeout(() => {
+                button.textContent = 'ANALYZE SECURITY';
+                button.disabled = false;
+                
+                // Show success message
+                showNotification('Security analysis complete!', 'success');
+            }, 1500);
+        }
+
+        function encryptCurrentPassword() {
+            const password = document.getElementById('password-input').value;
+            if (!password) return;
+            
+            // Store password in sessionStorage for the vault page
+            sessionStorage.setItem('passwordToEncrypt', password);
+            
+            // Navigate to vault page
+            window.location.href = 'vault.html';
+        }
+
+        function showNotification(message, type) {
+            const notification = document.createElement('div');
+            notification.className = `fixed top-20 right-6 z-50 p-4 rounded-lg border ${
+                type === 'success' ? 'bg-green-900 border-green-500 text-green-400' : 'bg-red-900 border-red-500 text-red-400'
+            }`;
+            notification.textContent = message;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            updateStrengthChart({
+                score: 0,
+                criteria: {
+                    length: false,
+                    uppercase: false,
+                    lowercase: false,
+                    numbers: false,
+                    special: false,
+                    common: false
+                }
+            });
+        });
+    </script>
+</body>
+</html>

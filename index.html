@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CyberGuard - Password Security Suite</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/7.2.4/pixi.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/typed.js/2.0.12/typed.min.js"></script>
+    <script src="https://unpkg.com/splitting@1.0.6/dist/splitting.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/splitting@1.0.6/dist/splitting.css">
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #0a0a0a;
+            --secondary-bg: #1a1a1a;
+            --accent-green: #00ff41;
+            --accent-blue: #00d4ff;
+            --warning-orange: #ff6b35;
+            --error-red: #ff073a;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .cursor-glow {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-green) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: screen;
+            transition: transform 0.1s ease;
+        }
+
+        .cursor-trail {
+            position: fixed;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-blue) 0%, transparent 50%);
+            pointer-events: none;
+            z-index: 9998;
+            mix-blend-mode: screen;
+            opacity: 0.3;
+        }
+
+        .terminal-container {
+            background: rgba(26, 26, 26, 0.9);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--accent-green);
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 255, 65, 0.3);
+        }
+
+        .neon-text {
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 10px var(--accent-green), 0 0 20px var(--accent-green), 0 0 30px var(--accent-green);
+        }
+
+        .terminal-text {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .hacker-button {
+            background: linear-gradient(45deg, var(--accent-green), var(--accent-blue));
+            border: none;
+            border-radius: 4px;
+            padding: 16px 32px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--primary-bg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hacker-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 255, 65, 0.4);
+        }
+
+        .hacker-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .hacker-button:hover::before {
+            left: 100%;
+        }
+
+        .scan-line {
+            position: absolute;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+            animation: scan 3s linear infinite;
+        }
+
+        @keyframes scan {
+            0% { top: 0; opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+
+        .glitch {
+            position: relative;
+        }
+
+        .glitch::before,
+        .glitch::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        .glitch::before {
+            animation: glitch-1 0.5s infinite;
+            color: var(--accent-green);
+            z-index: -1;
+        }
+
+        .glitch::after {
+            animation: glitch-2 0.5s infinite;
+            color: var(--accent-blue);
+            z-index: -2;
+        }
+
+        @keyframes glitch-1 {
+            0%, 14%, 15%, 49%, 50%, 99%, 100% { transform: translate(0); }
+            15%, 49% { transform: translate(-2px, 2px); }
+        }
+
+        @keyframes glitch-2 {
+            0%, 20%, 21%, 62%, 63%, 99%, 100% { transform: translate(0); }
+            21%, 62% { transform: translate(2px, -2px); }
+        }
+
+        .typing-cursor {
+            display: inline-block;
+            width: 3px;
+            height: 1.2em;
+            background: var(--accent-green);
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+
+        .particle-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        @media (max-width: 768px) {
+            .terminal-container {
+                margin: 1rem;
+                padding: 1.5rem;
+            }
+            
+            .hacker-button {
+                padding: 12px 24px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor-glow"></div>
+    <div class="cursor-trail"></div>
+
+    <!-- Matrix Background -->
+    <div class="matrix-bg" id="matrix-canvas"></div>
+
+    <!-- Particle System -->
+    <div class="particle-container" id="particle-container"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md border-b border-green-500">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="neon-text text-2xl font-bold">CyberGuard</div>
+                <div class="flex space-x-6">
+                    <a href="index.html" class="terminal-text text-green-400 hover:text-green-300 transition-colors">HOME</a>
+                    <a href="strength.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">STRENGTH</a>
+                    <a href="vault.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">VAULT</a>
+                    <a href="dashboard.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">DASHBOARD</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="min-h-screen flex items-center justify-center pt-20">
+        <div class="terminal-container max-w-4xl w-full mx-6 p-12 relative">
+            <div class="scan-line"></div>
+            
+            <!-- Header -->
+            <div class="text-center mb-12">
+                <h1 class="neon-text text-6xl font-bold mb-4 glitch" data-text="CYBERGUARD">CYBERGUARD</h1>
+                <div class="terminal-text text-xl text-gray-400 mb-8">
+                    <span id="typed-text"></span><span class="typing-cursor"></span>
+                </div>
+            </div>
+
+            <!-- Selection Menu -->
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="text-center group">
+                    <div class="mb-6">
+                        <div class="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-green-400 to-blue-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-12 h-12 text-black" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="terminal-text text-2xl font-bold mb-4 text-green-400">Password Strength</h3>
+                    <p class="text-gray-400 mb-6">Analyze your password security with advanced algorithms</p>
+                    <button onclick="navigateToStrength()" class="hacker-button w-full">ANALYZE PASSWORD</button>
+                </div>
+
+                <div class="text-center group">
+                    <div class="mb-6">
+                        <div class="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-blue-400 to-purple-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-12 h-12 text-black" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="terminal-text text-2xl font-bold mb-4 text-blue-400">Encryption Vault</h3>
+                    <p class="text-gray-400 mb-6">Securely encrypt and store your passwords</p>
+                    <button onclick="navigateToVault()" class="hacker-button w-full">ACCESS VAULT</button>
+                </div>
+
+                <div class="text-center group">
+                    <div class="mb-6">
+                        <div class="w-24 h-24 mx-auto mb-4 bg-gradient-to-br from-purple-400 to-pink-500 rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+                            <svg class="w-12 h-12 text-black" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z"/>
+                            </svg>
+                        </div>
+                    </div>
+                    <h3 class="terminal-text text-2xl font-bold mb-4 text-purple-400">Security Dashboard</h3>
+                    <p class="text-gray-400 mb-6">Monitor your overall security status</p>
+                    <button onclick="navigateToDashboard()" class="hacker-button w-full">VIEW DASHBOARD</button>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <div class="mt-16 grid grid-cols-3 gap-8 text-center">
+                <div>
+                    <div class="terminal-text text-3xl font-bold text-green-400" id="passwords-analyzed">0</div>
+                    <div class="text-sm text-gray-400">Passwords Analyzed</div>
+                </div>
+                <div>
+                    <div class="terminal-text text-3xl font-bold text-blue-400" id="encrypted-count">0</div>
+                    <div class="text-sm text-gray-400">Encrypted Passwords</div>
+                </div>
+                <div>
+                    <div class="terminal-text text-3xl font-bold text-purple-400" id="security-score">0%</div>
+                    <div class="text-sm text-gray-400">Security Score</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Matrix Background Animation
+        let matrixSketch = function(p) {
+            let drops = [];
+            let matrixChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%+-/~{[}]|\'";
+            
+            p.setup = function() {
+                let canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                canvas.parent('matrix-canvas');
+                
+                let cols = p.width / 14;
+                for (let i = 0; i < cols; i++) {
+                    drops[i] = p.random(-100, 0);
+                }
+            };
+            
+            p.draw = function() {
+                p.background(10, 10, 10, 25);
+                p.fill(0, 255, 65);
+                p.textFont('JetBrains Mono');
+                p.textSize(14);
+                
+                for (let i = 0; i < drops.length; i++) {
+                    let char = matrixChars.charAt(p.floor(p.random(matrixChars.length)));
+                    p.text(char, i * 14, drops[i] * 20);
+                    
+                    if (drops[i] * 20 > p.height && p.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            };
+            
+            p.windowResized = function() {
+                p.resizeCanvas(p.windowWidth, p.windowHeight);
+            };
+        };
+        
+        new p5(matrixSketch);
+
+        // Custom Cursor
+        document.addEventListener('mousemove', (e) => {
+            const cursorGlow = document.querySelector('.cursor-glow');
+            const cursorTrail = document.querySelector('.cursor-trail');
+            
+            cursorGlow.style.left = e.clientX - 10 + 'px';
+            cursorGlow.style.top = e.clientY - 10 + 'px';
+            
+            setTimeout(() => {
+                cursorTrail.style.left = e.clientX - 20 + 'px';
+                cursorTrail.style.top = e.clientY - 20 + 'px';
+            }, 100);
+        });
+
+        // Typed.js Animation
+        document.addEventListener('DOMContentLoaded', function() {
+            new Typed('#typed-text', {
+                strings: [
+                    'Advanced Password Security Analysis',
+                    'Military-Grade Encryption Standards',
+                    'Real-Time Security Monitoring',
+                    'Professional Cybersecurity Tools'
+                ],
+                typeSpeed: 50,
+                backSpeed: 30,
+                backDelay: 2000,
+                loop: true,
+                showCursor: false
+            });
+
+            // Animate stats
+            animateCounter('passwords-analyzed', 1247);
+            animateCounter('encrypted-count', 856);
+            animateCounter('security-score', 94, '%');
+
+            // Glitch effect on title
+            setInterval(() => {
+                const glitch = document.querySelector('.glitch');
+                glitch.style.animation = 'none';
+                setTimeout(() => {
+                    glitch.style.animation = '';
+                }, 100);
+            }, 5000);
+        });
+
+        function animateCounter(elementId, target, suffix = '') {
+            const element = document.getElementById(elementId);
+            let current = 0;
+            const increment = target / 100;
+            const timer = setInterval(() => {
+                current += increment;
+                if (current >= target) {
+                    current = target;
+                    clearInterval(timer);
+                }
+                element.textContent = Math.floor(current) + suffix;
+            }, 20);
+        }
+
+        // Navigation Functions
+        function navigateToStrength() {
+            window.location.href = 'strength.html';
+        }
+
+        function navigateToVault() {
+            window.location.href = 'vault.html';
+        }
+
+        function navigateToDashboard() {
+            window.location.href = 'dashboard.html';
+        }
+
+        // Particle System
+        class Particle {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.vx = (Math.random() - 0.5) * 2;
+                this.vy = (Math.random() - 0.5) * 2;
+                this.life = 1;
+                this.decay = 0.02;
+            }
+
+            update() {
+                this.x += this.vx;
+                this.y += this.vy;
+                this.life -= this.decay;
+            }
+
+            draw() {
+                const ctx = document.querySelector('#particle-container').getContext('2d');
+                ctx.save();
+                ctx.globalAlpha = this.life;
+                ctx.fillStyle = '#00ff41';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, 2, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        // Initialize particle system
+        const particleCanvas = document.createElement('canvas');
+        particleCanvas.width = window.innerWidth;
+        particleCanvas.height = window.innerHeight;
+        particleCanvas.style.position = 'absolute';
+        particleCanvas.style.top = '0';
+        particleCanvas.style.left = '0';
+        particleCanvas.style.pointerEvents = 'none';
+        document.getElementById('particle-container').appendChild(particleCanvas);
+
+        const particleCtx = particleCanvas.getContext('2d');
+        let particles = [];
+
+        document.addEventListener('click', (e) => {
+            for (let i = 0; i < 10; i++) {
+                particles.push(new Particle(e.clientX, e.clientY));
+            }
+        });
+
+        function animateParticles() {
+            particleCtx.clearRect(0, 0, particleCanvas.width, particleCanvas.height);
+            
+            particles = particles.filter(particle => {
+                particle.update();
+                particle.draw();
+                return particle.life > 0;
+            });
+            
+            requestAnimationFrame(animateParticles);
+        }
+
+        animateParticles();
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            particleCanvas.width = window.innerWidth;
+            particleCanvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>

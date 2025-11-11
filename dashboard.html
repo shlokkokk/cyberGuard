@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Security Dashboard - CyberGuard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/echarts/5.4.2/echarts.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-bg: #0a0a0a;
+            --secondary-bg: #1a1a1a;
+            --accent-green: #00ff41;
+            --accent-blue: #00d4ff;
+            --warning-orange: #ff6b35;
+            --error-red: #ff073a;
+            --text-primary: #ffffff;
+            --text-secondary: #b0b0b0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: var(--primary-bg);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            cursor: none;
+        }
+
+        .matrix-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+        }
+
+        .cursor-glow {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: radial-gradient(circle, var(--accent-green) 0%, transparent 70%);
+            pointer-events: none;
+            z-index: 9999;
+            mix-blend-mode: screen;
+            transition: transform 0.1s ease;
+        }
+
+        .terminal-container {
+            background: rgba(26, 26, 26, 0.95);
+            backdrop-filter: blur(15px);
+            border: 1px solid var(--accent-green);
+            border-radius: 12px;
+            box-shadow: 0 0 40px rgba(0, 255, 65, 0.2);
+        }
+
+        .neon-text {
+            font-family: 'Orbitron', monospace;
+            text-shadow: 0 0 10px var(--accent-green), 0 0 20px var(--accent-green), 0 0 30px var(--accent-green);
+        }
+
+        .terminal-text {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .stat-card {
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card:hover {
+            border-color: var(--accent-green);
+            box-shadow: 0 10px 30px rgba(0, 255, 65, 0.2);
+            transform: translateY(-5px);
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 255, 65, 0.1), transparent);
+            transition: left 0.5s;
+        }
+
+        .stat-card:hover::before {
+            left: 100%;
+        }
+
+        .stat-number {
+            font-family: 'Orbitron', monospace;
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .chart-container {
+            height: 400px;
+            background: rgba(0, 0, 0, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .security-recommendation {
+            background: rgba(0, 0, 0, 0.6);
+            border-left: 4px solid var(--accent-green);
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .security-recommendation:hover {
+            border-left-color: var(--accent-blue);
+            background: rgba(0, 255, 65, 0.05);
+        }
+
+        .recommendation-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            margin-right: 16px;
+            flex-shrink: 0;
+        }
+
+        .recommendation-icon.security {
+            background: var(--accent-green);
+            color: black;
+        }
+
+        .recommendation-icon.warning {
+            background: var(--warning-orange);
+            color: white;
+        }
+
+        .recommendation-icon.info {
+            background: var(--accent-blue);
+            color: white;
+        }
+
+        .progress-bar {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 10px;
+            transition: width 0.5s ease;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .quick-action {
+            background: linear-gradient(45deg, var(--accent-green), var(--accent-blue));
+            border: none;
+            border-radius: 8px;
+            padding: 16px 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 700;
+            color: var(--primary-bg);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .quick-action:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 255, 65, 0.4);
+        }
+
+        @media (max-width: 768px) {
+            .stat-card {
+                padding: 16px;
+            }
+            
+            .stat-number {
+                font-size: 2rem;
+            }
+            
+            .chart-container {
+                height: 300px;
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Custom Cursor -->
+    <div class="cursor-glow"></div>
+
+    <!-- Matrix Background -->
+    <div class="matrix-bg" id="matrix-canvas"></div>
+
+    <!-- Navigation -->
+    <nav class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md border-b border-green-500">
+        <div class="container mx-auto px-6 py-4">
+            <div class="flex items-center justify-between">
+                <div class="neon-text text-2xl font-bold">CyberGuard</div>
+                <div class="flex space-x-6">
+                    <a href="index.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">HOME</a>
+                    <a href="strength.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">STRENGTH</a>
+                    <a href="vault.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">VAULT</a>
+                    <a href="dashboard.html" class="terminal-text text-green-400 hover:text-green-300 transition-colors">DASHBOARD</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="min-h-screen pt-20 pb-12">
+        <div class="container mx-auto px-6">
+            <div class="terminal-container max-w-7xl mx-auto p-8">
+                <!-- Header -->
+                <div class="text-center mb-12">
+                    <h1 class="neon-text text-4xl font-bold mb-4">Security Dashboard</h1>
+                    <p class="terminal-text text-gray-400">Comprehensive overview of your password security status</p>
+                </div>
+
+                <!-- Statistics Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+                    <div class="stat-card">
+                        <div class="stat-number text-green-400" id="total-passwords">0</div>
+                        <div class="stat-label">Total Passwords</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number text-blue-400" id="strong-passwords">0</div>
+                        <div class="stat-label">Strong Passwords</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number text-orange-400" id="avg-strength">0%</div>
+                        <div class="stat-label">Avg Strength</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number text-purple-400" id="security-score">0</div>
+                        <div class="stat-label">Security Score</div>
+                    </div>
+                </div>
+
+                <div class="grid lg:grid-cols-2 gap-8 mb-12">
+                    <!-- Password Strength Distribution -->
+                    <div class="chart-container">
+                        <h3 class="terminal-text text-xl font-bold mb-6 text-green-400">Password Strength Distribution</h3>
+                        <div id="strength-chart" style="height: 300px;"></div>
+                    </div>
+
+                    <!-- Security Timeline -->
+                    <div class="chart-container">
+                        <h3 class="terminal-text text-xl font-bold mb-6 text-blue-400">Security Activity Timeline</h3>
+                        <div id="timeline-chart" style="height: 300px;"></div>
+                    </div>
+                </div>
+
+                <!-- Security Score Progress -->
+                <div class="mb-12">
+                    <h3 class="terminal-text text-xl font-bold mb-6 text-orange-400">Overall Security Score</h3>
+                    <div class="progress-bar">
+                        <div id="security-progress" class="progress-fill" style="width: 0%; background: var(--error-red);">
+                            0%
+                        </div>
+                    </div>
+                    <div class="flex justify-between text-sm text-gray-400 mt-2">
+                        <span>Needs Improvement</span>
+                        <span>Good</span>
+                        <span>Excellent</span>
+                    </div>
+                </div>
+
+                <!-- Security Recommendations -->
+                <div class="mb-12">
+                    <h3 class="terminal-text text-xl font-bold mb-6 text-purple-400">Security Recommendations</h3>
+                    <div id="recommendations-container">
+                        <!-- Recommendations will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="text-center">
+                    <h3 class="terminal-text text-xl font-bold mb-6 text-cyan-400">Quick Actions</h3>
+                    <div class="flex flex-wrap justify-center gap-4">
+                        <a href="strength.html" class="quick-action">🔍 Analyze Password</a>
+                        <a href="vault.html" class="quick-action">🔒 Encrypt Password</a>
+                        <button class="quick-action" onclick="exportData()">📊 Export Data</button>
+                        <button class="quick-action" onclick="generateReport()">📄 Generate Report</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Matrix Background Animation
+        let matrixSketch = function(p) {
+            let drops = [];
+            let matrixChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ123456789@#$%^&*()*&^%+-/~{[}]|\'";
+            
+            p.setup = function() {
+                let canvas = p.createCanvas(p.windowWidth, p.windowHeight);
+                canvas.parent('matrix-canvas');
+                
+                let cols = p.width / 14;
+                for (let i = 0; i < cols; i++) {
+                    drops[i] = p.random(-100, 0);
+                }
+            };
+            
+            p.draw = function() {
+                p.background(10, 10, 10, 25);
+                p.fill(0, 255, 65, 150);
+                p.textFont('JetBrains Mono');
+                p.textSize(14);
+                
+                for (let i = 0; i < drops.length; i++) {
+                    let char = matrixChars.charAt(p.floor(p.random(matrixChars.length)));
+                    p.text(char, i * 14, drops[i] * 20);
+                    
+                    if (drops[i] * 20 > p.height && p.random() > 0.975) {
+                        drops[i] = 0;
+                    }
+                    drops[i]++;
+                }
+            };
+            
+            p.windowResized = function() {
+                p.resizeCanvas(p.windowWidth, p.windowHeight);
+            };
+        };
+        
+        new p5(matrixSketch);
+
+        // Custom Cursor
+        document.addEventListener('mousemove', (e) => {
+            const cursorGlow = document.querySelector('.cursor-glow');
+            cursorGlow.style.left = e.clientX - 10 + 'px';
+            cursorGlow.style.top = e.clientY - 10 + 'px';
+        });
+
+        // Dashboard data and functions
+        let dashboardData = {
+            totalPasswords: 0,
+            strongPasswords: 0,
+            averageStrength: 0,
+            securityScore: 0,
+            passwordHistory: []
+        };
+
+        function loadDashboardData() {
+            // Load data from localStorage
+            const history = JSON.parse(localStorage.getItem('passwordHistory') || '[]');
+            dashboardData.passwordHistory = history;
+            dashboardData.totalPasswords = history.length;
+            
+            // Calculate statistics
+            if (history.length > 0) {
+                // Simulate strength analysis for stored passwords
+                const strengths = history.map(item => {
+                    // Simple strength calculation based on length and method
+                    let strength = Math.min(100, item.originalLength * 8);
+                    if (item.method === 'aes') strength += 10;
+                    return Math.min(100, strength);
+                });
+                
+                dashboardData.strongPasswords = strengths.filter(s => s >= 70).length;
+                dashboardData.averageStrength = Math.round(strengths.reduce((a, b) => a + b, 0) / strengths.length);
+                dashboardData.securityScore = Math.round(dashboardData.averageStrength * 0.8 + (dashboardData.strongPasswords / dashboardData.totalPasswords) * 20);
+            }
+            
+            updateDashboardDisplay();
+        }
+
+        function updateDashboardDisplay() {
+            // Update statistics
+            document.getElementById('total-passwords').textContent = dashboardData.totalPasswords;
+            document.getElementById('strong-passwords').textContent = dashboardData.strongPasswords;
+            document.getElementById('avg-strength').textContent = dashboardData.averageStrength + '%';
+            document.getElementById('security-score').textContent = dashboardData.securityScore;
+
+            // Update progress bar
+            const progressBar = document.getElementById('security-progress');
+            progressBar.style.width = dashboardData.securityScore + '%';
+            progressBar.textContent = dashboardData.securityScore + '%';
+            
+            // Update progress bar color
+            if (dashboardData.securityScore < 30) {
+                progressBar.style.background = 'var(--error-red)';
+            } else if (dashboardData.securityScore < 60) {
+                progressBar.style.background = 'var(--warning-orange)';
+            } else if (dashboardData.securityScore < 80) {
+                progressBar.style.background = 'var(--accent-blue)';
+            } else {
+                progressBar.style.background = 'var(--accent-green)';
+            }
+
+            // Animate numbers
+            animateNumbers();
+
+            // Update charts
+            updateStrengthChart();
+            updateTimelineChart();
+
+            // Generate recommendations
+            generateRecommendations();
+        }
+
+        function animateNumbers() {
+            const elements = [
+                { id: 'total-passwords', target: dashboardData.totalPasswords },
+                { id: 'strong-passwords', target: dashboardData.strongPasswords },
+                { id: 'security-score', target: dashboardData.securityScore }
+            ];
+
+            elements.forEach(element => {
+                const el = document.getElementById(element.id);
+                let current = 0;
+                const increment = element.target / 50;
+                const timer = setInterval(() => {
+                    current += increment;
+                    if (current >= element.target) {
+                        current = element.target;
+                        clearInterval(timer);
+                    }
+                    el.textContent = Math.floor(current);
+                }, 20);
+            });
+        }
+
+        function updateStrengthChart() {
+            const chart = echarts.init(document.getElementById('strength-chart'));
+            
+            // Generate sample data based on actual passwords
+            const strengthData = [
+                { name: 'Very Weak (0-20%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.1)) },
+                { name: 'Weak (21-40%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.2)) },
+                { name: 'Medium (41-60%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.3)) },
+                { name: 'Strong (61-80%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.25)) },
+                { name: 'Very Strong (81-100%)', value: Math.max(1, dashboardData.strongPasswords) }
+            ];
+
+            const option = {
+                backgroundColor: 'transparent',
+                textStyle: {
+                    color: '#ffffff'
+                },
+                tooltip: {
+                    trigger: 'item',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    borderColor: '#00ff41',
+                    textStyle: {
+                        color: '#ffffff'
+                    }
+                },
+                series: [{
+                    name: 'Password Strength',
+                    type: 'pie',
+                    radius: ['40%', '70%'],
+                    center: ['50%', '50%'],
+                    data: strengthData,
+                    emphasis: {
+                        itemStyle: {
+                            shadowBlur: 10,
+                            shadowOffsetX: 0,
+                            shadowColor: 'rgba(0, 255, 65, 0.5)'
+                        }
+                    },
+                    itemStyle: {
+                        color: function(params) {
+                            const colors = ['#ff073a', '#ff6b35', '#ffd700', '#00d4ff', '#00ff41'];
+                            return colors[params.dataIndex];
+                        }
+                    },
+                    label: {
+                        color: '#ffffff'
+                    }
+                }]
+            };
+            
+            chart.setOption(option);
+        }
+
+        function updateTimelineChart() {
+            const chart = echarts.init(document.getElementById('timeline-chart'));
+            
+            // Generate timeline data from password history
+            const timelineData = generateTimelineData();
+
+            const option = {
+                backgroundColor: 'transparent',
+                textStyle: {
+                    color: '#ffffff'
+                },
+                tooltip: {
+                    trigger: 'axis',
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    borderColor: '#00ff41',
+                    textStyle: {
+                        color: '#ffffff'
+                    }
+                },
+                xAxis: {
+                    type: 'category',
+                    data: timelineData.dates,
+                    axisLine: {
+                        lineStyle: {
+                            color: '#333'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#ffffff'
+                    }
+                },
+                yAxis: {
+                    type: 'value',
+                    axisLine: {
+                        lineStyle: {
+                            color: '#333'
+                        }
+                    },
+                    axisLabel: {
+                        color: '#ffffff'
+                    },
+                    splitLine: {
+                        lineStyle: {
+                            color: '#333'
+                        }
+                    }
+                },
+                series: [{
+                    name: 'Passwords Added',
+                    type: 'line',
+                    data: timelineData.counts,
+                    smooth: true,
+                    lineStyle: {
+                        color: '#00ff41',
+                        width: 3
+                    },
+                    itemStyle: {
+                        color: '#00ff41'
+                    },
+                    areaStyle: {
+                        color: 'rgba(0, 255, 65, 0.2)'
+                    }
+                }]
+            };
+            
+            chart.setOption(option);
+        }
+
+        function generateTimelineData() {
+            const dates = [];
+            const counts = [];
+            
+            // Generate last 7 days
+            for (let i = 6; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                dates.push(date.toLocaleDateString());
+                
+                // Count passwords added on this day
+                const dayStart = new Date(date);
+                dayStart.setHours(0, 0, 0, 0);
+                const dayEnd = new Date(date);
+                dayEnd.setHours(23, 59, 59, 999);
+                
+                const dayCount = dashboardData.passwordHistory.filter(item => {
+                    const itemDate = new Date(item.timestamp);
+                    return itemDate >= dayStart && itemDate <= dayEnd;
+                }).length;
+                
+                counts.push(dayCount);
+            }
+            
+            return { dates, counts };
+        }
+
+        function generateRecommendations() {
+            const container = document.getElementById('recommendations-container');
+            const recommendations = [];
+
+            // Generate recommendations based on data
+            if (dashboardData.totalPasswords === 0) {
+                recommendations.push({
+                    icon: '🔒',
+                    type: 'security',
+                    title: 'Start Securing Your Passwords',
+                    description: 'You haven\'t encrypted any passwords yet. Start by analyzing and encrypting your important passwords.',
+                    action: 'Go to Password Strength Analyzer'
+                });
+            } else if (dashboardData.strongPasswords < dashboardData.totalPasswords * 0.5) {
+                recommendations.push({
+                    icon: '⚠️',
+                    type: 'warning',
+                    title: 'Strengthen Weak Passwords',
+                    description: `You have ${dashboardData.totalPasswords - dashboardData.strongPasswords} passwords that could be stronger. Consider updating them.`,
+                    action: 'Review Weak Passwords'
+                });
+            }
+
+            if (dashboardData.securityScore < 70) {
+                recommendations.push({
+                    icon: '📈',
+                    type: 'info',
+                    title: 'Improve Security Score',
+                    description: 'Your security score can be improved by using stronger encryption methods and longer passwords.',
+                    action: 'Learn More'
+                });
+            }
+
+            // Always include general recommendations
+            recommendations.push({
+                icon: '🔄',
+                type: 'security',
+                title: 'Regular Security Audits',
+                description: 'Perform regular security checks and update your passwords periodically to maintain high security standards.',
+                action: 'Schedule Audit'
+            });
+
+            recommendations.push({
+                icon: '💾',
+                type: 'info',
+                title: 'Backup Your Data',
+                description: 'Consider exporting your encrypted password data for backup purposes. Store it securely.',
+                action: 'Export Data'
+            });
+
+            // Render recommendations
+            container.innerHTML = recommendations.map(rec => `
+                <div class="security-recommendation">
+                    <div class="flex items-start">
+                        <div class="recommendation-icon ${rec.type}">
+                            ${rec.icon}
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="terminal-text font-bold text-lg mb-2">${rec.title}</h4>
+                            <p class="text-gray-300 mb-3">${rec.description}</p>
+                            <button class="text-sm text-green-400 hover:text-green-300 font-bold">
+                                ${rec.action} →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function exportData() {
+            const data = {
+                exportDate: new Date().toISOString(),
+                totalPasswords: dashboardData.totalPasswords,
+                securityScore: dashboardData.securityScore,
+                passwordHistory: dashboardData.passwordHistory.map(item => ({
+                    id: item.id,
+                    method: item.method,
+                    timestamp: item.timestamp,
+                    originalLength: item.originalLength
+                    // Note: We don't export the actual encrypted data for security
+                }))
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cyberguard-export-${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function generateReport() {
+            const report = `
+CYBERGUARD SECURITY REPORT
+Generated: ${new Date().toLocaleString()}
+
+SUMMARY:
+- Total Passwords: ${dashboardData.totalPasswords}
+- Strong Passwords: ${dashboardData.strongPasswords}
+- Average Strength: ${dashboardData.averageStrength}%
+- Security Score: ${dashboardData.securityScore}/100
+
+RECOMMENDATIONS:
+1. Regularly update weak passwords
+2. Use AES-256 encryption for sensitive data
+3. Perform monthly security audits
+4. Enable two-factor authentication where possible
+
+This report was generated by CyberGuard Password Security Suite.
+            `;
+
+            const blob = new Blob([report], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `cyberguard-report-${new Date().toISOString().split('T')[0]}.txt`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            loadDashboardData();
+        });
+    </script>
+</body>
+</html>
