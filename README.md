@@ -1,3 +1,5 @@
+[![CyberGuard Live Demo](https://img.shields.io/badge/Live%20Demo-CyberGuard-green?style=for-the-badge&logo=firefox&logoColor=white)](https://shlokkokk.github.io/cyberguard/)
+
 # 🔐 CyberGuard - Password Security & Encryption Suite
 
 ![CyberGuard Banner](resources/hero-cyber.png)
