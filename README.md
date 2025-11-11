@@ -9,6 +9,7 @@
 1. Clone this repository:
    ```bash
    git clone https://github.com/shlokkokk/cyberguard.git
+   cd cyberguard
 2. Open index.html in your browser, or serve with
    
        python -m http.server 8000
