@@ -54,20 +54,10 @@
 - Hacker-style animations
 - Responsive design for all devices
 
-## 🚀 Technologies Used
-
-- **Frontend**: HTML5, CSS3, JavaScript (ES6+)
-- **Styling**: Tailwind CSS
-- **Animations**: Anime.js, p5.js, Pixi.js
-- **Encryption**: CryptoJS
-- **Charts**: ECharts.js
-- **Typography**: Typed.js, Splitting.js
-- **Physics**: Matter.js
-
 ## 📱 Usage
 
 1. **Analyze Passwords**: Check the strength of your existing passwords
-2. **Encrypt Passwords**: Securely store passwords with encryption
+2. **Encrypt Passwords**: Securely store passwords with encryption (you can decrypt it whenever you want with a generated key or a user defined key)
 3. **Monitor Security**: Track your overall security status
 4. **Export Data**: Backup your encrypted password history
 
