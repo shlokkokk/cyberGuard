@@ -620,14 +620,14 @@
                 try {
                     switch (currentMethod) {
                         case 'aes':
-                            encrypted = CryptoJS.AES.encrypt(password, key).toString();
+                            encrypted = "aes:" + CryptoJS.AES.encrypt(password, key).toString();
                             break;
                         case 'base64':
-                            encrypted = CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(password));
+                            encrypted = "base64:" + CryptoJS.enc.Base64.stringify(CryptoJS.enc.Utf8.parse(password));
                             break;
                         case 'custom':
                             // Simple XOR encryption for demo
-                            encrypted = customEncrypt(password, key);
+                            encrypted = "custom:" + customEncrypt(password, key);
                             break;
                     }
 
@@ -657,6 +657,10 @@
         function decryptPassword() {
             const hash = document.getElementById('decrypt-hash').value;
             const key = document.getElementById('decryption-key').value;
+
+            const method = detectEncryptionMethod(hash);
+            const cleanHash = hash.includes(":") ? hash.split(":").slice(1).join(":") : hash;
+
             
             if (!hash || !key) {
                 showNotification('Please enter both encrypted hash and decryption key', 'error');
@@ -678,14 +682,14 @@
                     
                     switch (method) {
                         case 'aes':
-                            const bytes = CryptoJS.AES.decrypt(hash, key);
+                            const bytes = CryptoJS.AES.decrypt(cleanHash, key);
                             decrypted = bytes.toString(CryptoJS.enc.Utf8);
                             break;
                         case 'base64':
-                            decrypted = CryptoJS.enc.Base64.parse(hash).toString(CryptoJS.enc.Utf8);
+                            decrypted = CryptoJS.enc.Base64.parse(cleanHash).toString(CryptoJS.enc.Utf8);
                             break;
                         case 'custom':
-                            decrypted = customDecrypt(hash, key);
+                            decrypted = customDecrypt(cleanHash, key);
                             break;
                     }
 
@@ -737,9 +741,10 @@
 
         function detectEncryptionMethod(hash) {
             // Simple heuristic to detect method
-            if (hash.includes('/')) return 'aes'; // AES encrypted data often contains /
-            if (hash.length % 4 === 0 && /^[A-Za-z0-9+/=]+$/.test(hash)) return 'base64';
-            return 'custom';
+            if (hash.startsWith("aes:")) return "aes";
+            if (hash.startsWith("base64:")) return "base64";
+            if (hash.startsWith("custom:")) return "custom";
+            return "unknown";
         }
 
         function copyToClipboard(elementId) {
