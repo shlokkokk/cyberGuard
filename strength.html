@@ -266,6 +266,7 @@
 <body>
     <!-- Custom Cursor -->
     <div class="cursor-glow"></div>
+    <div class="cursor-trail"></div>
 
     <!-- Matrix Background -->
     <div class="matrix-bg" id="matrix-canvas"></div>
@@ -416,6 +417,60 @@
     </main>
 
     <script>
+        // Mobile-friendly cursor tap effect 
+if (/Mobi|Android/i.test(navigator.userAgent)) {
+    const glow = document.querySelector('.cursor-glow');
+    const trail = document.querySelector('.cursor-trail');
+
+    if (glow && trail) {
+
+        // Start hidden
+        glow.style.display = "none";
+        trail.style.display = "none";
+
+        function showTapEffect(x, y) {
+            // Correct positions
+            glow.style.left = x - 10 + "px";
+            glow.style.top = y - 10 + "px";
+
+            trail.style.left = x - 20 + "px";
+            trail.style.top = y - 20 + "px";
+
+            // Reset anim
+            glow.style.transition = "none";
+            trail.style.transition = "none";
+
+            glow.style.opacity = "1";
+            trail.style.opacity = "0.4";
+
+            glow.style.display = "block";
+            trail.style.display = "block";
+
+            // Fade out
+            setTimeout(() => {
+                glow.style.transition = "opacity 1s ease";
+                trail.style.transition = "opacity 1s ease";
+
+                glow.style.opacity = "0";
+                trail.style.opacity = "0";
+            }, 50);
+
+            // Fully hide
+            setTimeout(() => {
+                glow.style.display = "none";
+                trail.style.display = "none";
+            }, 1100);
+        }
+
+        document.addEventListener("touchstart", (e) => {
+            const t = e.touches[0];
+            showTapEffect(t.clientX, t.clientY);
+        });
+    }
+}
+
+        
+
         
         // Matrix Background Animation
         let matrixSketch = function(p) {
