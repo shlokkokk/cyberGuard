@@ -278,11 +278,50 @@
                 flex-direction: column;
             }
         }
+
+    @media (max-width: 768px) {
+    .vault-tab {
+        flex: 1;
+        text-align: center;
+        padding: 12px 8px;
+        font-size: 14px;
+    }
+
+    .flex.border-b.border-green-500.px-8 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+        gap: 0;
+    }
+
+    .vault-tab span, .vault-tab {
+        white-space: nowrap;
+    }
+}
+
+@media (max-width: 768px) {
+    ::placeholder {
+        font-size: 14px !important;
+        line-height: 1.2;
+    }
+
+    input::placeholder,
+    textarea::placeholder {
+        font-size: 12px !important;
+    }
+
+    .hacker-input {
+        font-size: 14px !important;
+        padding: 12px !important;
+    }
+}
+
+
     </style>
 </head>
 <body>
     <!-- Custom Cursor -->
     <div class="cursor-glow"></div>
+    <div class="cursor-trail"></div>
 
     <!-- Matrix Background -->
     <div class="matrix-bg" id="matrix-canvas"></div>
@@ -290,7 +329,7 @@
     <!-- Navigation -->
     <nav class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md border-b border-green-500">
         <div class="container mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col md:flex-row items-center justify-between text-center md:text-left gap-2 md:gap-6">
                 <div class="neon-text text-2xl font-bold">CyberGuard</div>
                 <div class="flex space-x-6">
                     <a href="index.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">HOME</a>
@@ -904,6 +943,53 @@
                 showNotification('Password loaded from strength analyzer', 'success');
             }
         });
+
+        // Mobile-friendly cursor tap effect 
+if (/Mobi|Android/i.test(navigator.userAgent)) {
+    const glow = document.querySelector('.cursor-glow');
+    const trail = document.querySelector('.cursor-trail');
+
+    if (glow && trail) {
+
+        glow.style.display = "none";
+        trail.style.display = "none";
+
+        function showTapEffect(x, y) {
+            glow.style.left = x - 10 + "px";
+            glow.style.top = y - 10 + "px";
+
+            trail.style.left = x - 20 + "px";
+            trail.style.top = y - 20 + "px";
+
+            glow.style.transition = "none";
+            trail.style.transition = "none";
+
+            glow.style.opacity = "1";
+            trail.style.opacity = "0.4";
+
+            glow.style.display = "block";
+            trail.style.display = "block";
+
+            setTimeout(() => {
+                glow.style.transition = "opacity 1s ease";
+                trail.style.transition = "opacity 1s ease";
+                glow.style.opacity = "0";
+                trail.style.opacity = "0";
+            }, 50);
+
+            setTimeout(() => {
+                glow.style.display = "none";
+                trail.style.display = "none";
+            }, 1100);
+        }
+
+        document.addEventListener("touchstart", (e) => {
+            const t = e.touches[0];
+            showTapEffect(t.clientX, t.clientY);
+        });
+    }
+}
+
     </script>
 </body>
 </html>
