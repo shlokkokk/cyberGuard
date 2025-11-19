@@ -5483,16 +5483,26 @@
             
             const entropy = password.length * Math.log2(charset);
 
-            let crackTime = 'Instant';
-                if (!criteria.common) {
-                    crackTime = "Instant (Found in leaked password databases)";
-                } else {
-                    if (entropy > 30) crackTime = 'Centuries';
-                    else if (entropy > 25) crackTime = 'Years';
-                    else if (entropy > 20) crackTime = 'Months';
-                    else if (entropy > 15) crackTime = 'Days';
-                    else if (entropy > 10) crackTime = 'Hours';
-                }
+           // Realistic crack time estimation
+            let crackTime;
+
+            // If password is found in leaks → always instant
+            if (!criteria.common) {
+                crackTime = "Instant (Found in leaked password databases)";
+            } 
+            else {
+                if (entropy < 20) crackTime = "Instant";
+                else if (entropy < 28) crackTime = "A few seconds";
+                else if (entropy < 35) crackTime = "Seconds";
+                else if (entropy < 45) crackTime = "Minutes";
+                else if (entropy < 55) crackTime = "Hours";
+                else if (entropy < 65) crackTime = "Days";
+                else if (entropy < 75) crackTime = "Weeks";
+                else if (entropy < 85) crackTime = "Months";
+                else if (entropy < 95) crackTime = "Years";
+                else crackTime = "Centuries+";
+            }
+
 
             return {
                 score: Math.max(0, Math.min(100, score)),
