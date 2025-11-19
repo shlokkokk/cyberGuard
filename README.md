@@ -22,6 +22,12 @@
 - Comprehensive security criteria checking
 - Entropy and crack time estimation
 - Interactive radar chart visualization
+- Massive 5,000+ weak-password blacklist to detect leaked/common  passwords  
+- Real-world breach detection with warning popup  
+- Improved scoring engine for accurate strength calculation  
+- Entropy-based crack-time estimation  
+- Smart recommendations based on password weaknesses  
+- Automatic warnings for passwords found in real leak databases  
 
 ## 🎯 Security Features
 
