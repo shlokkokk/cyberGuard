@@ -230,6 +230,37 @@
                 padding: 1.5rem;
             }
         }
+    @media (max-width: 768px) {
+    
+    
+    body {
+        padding: 0 8px;
+    }
+
+    .terminal-container {
+        margin: 1rem auto !important;
+        padding: 1.2rem !important;
+        max-width: 100% !important;
+    }
+
+    .container {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+
+    main {
+        padding-top: 6rem !important;
+    }
+
+    h1.neon-text {
+        font-size: 2rem !important;
+    }
+
+    /* NAVVV */
+    
+    
+}
+
     </style>
 </head>
 <body>
@@ -242,7 +273,7 @@
     <!-- Navigation -->
     <nav class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md border-b border-green-500">
         <div class="container mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col md:flex-row items-center justify-between text-center md:text-left gap-2 md:gap-6">
                 <div class="neon-text text-2xl font-bold">CyberGuard</div>
                 <div class="flex space-x-6">
                     <a href="index.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">HOME</a>
@@ -385,6 +416,7 @@
     </main>
 
     <script>
+        
         // Matrix Background Animation
         let matrixSketch = function(p) {
             let drops = [];
@@ -5661,6 +5693,9 @@
                     }]
                 }],
                 radar: {
+                    center: ['50%', window.innerWidth < 768 ? '60%' : '50%'],
+                    radius: window.innerWidth < 768 ? '55%' : '75%',
+
                     indicator: [
                         { name: 'Length', max: 100 },
                         { name: 'Uppercase', max: 100 },
