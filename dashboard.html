@@ -223,6 +223,13 @@
                 padding: 16px;
             }
         }
+         @media (max-width: 768px) {
+    .chart-container {
+        height: 320px !important;
+        padding: 16px !important;
+    }
+}
+
     </style>
 </head>
 <body>
@@ -235,7 +242,7 @@
     <!-- Navigation -->
     <nav class="fixed top-0 left-0 right-0 z-50 bg-black bg-opacity-80 backdrop-blur-md border-b border-green-500">
         <div class="container mx-auto px-6 py-4">
-            <div class="flex items-center justify-between">
+            <div class="flex flex-col md:flex-row items-center justify-between text-center md:text-left gap-2 md:gap-6">
                 <div class="neon-text text-2xl font-bold">CyberGuard</div>
                 <div class="flex space-x-6">
                     <a href="index.html" class="terminal-text text-gray-400 hover:text-green-300 transition-colors">HOME</a>
@@ -253,7 +260,7 @@
             <div class="terminal-container max-w-7xl mx-auto p-8">
                 <!-- Header -->
                 <div class="text-center mb-12">
-                    <h1 class="neon-text text-4xl font-bold mb-4">Security Dashboard</h1>
+                    <h1 class="neon-text text-3xl md:text-4xl font-bold mb-4">Security Dashboard</h1>
                     <p class="terminal-text text-gray-400">Comprehensive overview of your password security status</p>
                 </div>
 
@@ -279,7 +286,7 @@
 
                 <div class="grid lg:grid-cols-2 gap-8 mb-12">
                     <!-- Password Strength Distribution -->
-                    <div class="chart-container">
+                    <div class="chart-container min-h-[430px] md:min-h-[380px]">
                         <h3 class="terminal-text text-xl font-bold mb-6 text-green-400">Password Strength Distribution</h3>
                         <div id="strength-chart" style="height: 300px;"></div>
                     </div>
@@ -287,7 +294,8 @@
                     <!-- Security Timeline -->
                     <div class="chart-container">
                         <h3 class="terminal-text text-xl font-bold mb-6 text-blue-400">Security Activity Timeline</h3>
-                        <div id="timeline-chart" style="height: 300px;"></div>
+                        <div id="timeline-chart" style="height: 300px; width: 100%;"></div>
+
                     </div>
                 </div>
 
@@ -465,125 +473,111 @@
         }
 
         function updateStrengthChart() {
-            const chart = echarts.init(document.getElementById('strength-chart'));
-            
-            // Generate sample data based on actual passwords
-            const strengthData = [
-                { name: 'Very Weak (0-20%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.1)) },
-                { name: 'Weak (21-40%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.2)) },
-                { name: 'Medium (41-60%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.3)) },
-                { name: 'Strong (61-80%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.25)) },
-                { name: 'Very Strong (81-100%)', value: Math.max(1, dashboardData.strongPasswords) }
-            ];
+    const chart = echarts.init(document.getElementById('strength-chart'));
+    const isMobile = window.innerWidth < 768;
 
-            const option = {
-                backgroundColor: 'transparent',
-                textStyle: {
-                    color: '#ffffff'
-                },
-                tooltip: {
-                    trigger: 'item',
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    borderColor: '#00ff41',
-                    textStyle: {
-                        color: '#ffffff'
-                    }
-                },
-                series: [{
-                    name: 'Password Strength',
-                    type: 'pie',
-                    radius: ['40%', '70%'],
-                    center: ['50%', '50%'],
-                    data: strengthData,
-                    emphasis: {
-                        itemStyle: {
-                            shadowBlur: 10,
-                            shadowOffsetX: 0,
-                            shadowColor: 'rgba(0, 255, 65, 0.5)'
-                        }
-                    },
-                    itemStyle: {
-                        color: function(params) {
-                            const colors = ['#ff073a', '#ff6b35', '#ffd700', '#00d4ff', '#00ff41'];
-                            return colors[params.dataIndex];
-                        }
-                    },
-                    label: {
-                        color: '#ffffff'
-                    }
-                }]
-            };
-            
-            chart.setOption(option);
-        }
+    const strengthData = [
+        { name: 'Very Weak (0-20%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.1)) },
+        { name: 'Weak (21-40%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.2)) },
+        { name: 'Medium (41-60%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.3)) },
+        { name: 'Strong (61-80%)', value: Math.max(1, Math.floor(dashboardData.totalPasswords * 0.25)) },
+        { name: 'Very Strong (81-100%)', value: Math.max(1, dashboardData.strongPasswords) }
+    ];
+
+    const option = {
+        backgroundColor: "transparent",
+        textStyle: { color: "#fff" },
+
+        tooltip: {
+            trigger: "item",
+            backgroundColor: "rgba(0,0,0,0.85)",
+            borderColor: "#00ff41",
+            confine: isMobile,               // MOBILE ONLY
+            extraCssText: isMobile ? "max-width:120px; white-space:break-spaces;" : "",
+        },
+
+        series: [{
+            name: "Password Strength",
+            type: "pie",
+
+            // PC = original (do NOT change)
+            // Mobile = smaller
+            radius: isMobile ? ["35%", "60%"] : ["40%", "70%"],
+            center: ["50%", "50%"],
+
+            data: strengthData,
+            itemStyle: {
+                color: function (p) {
+                    return ['#ff073a', '#ff6b35', '#ffd700', '#00d4ff', '#00ff41'][p.dataIndex];
+                }
+            },
+
+            label: {
+                color: "#fff",
+                formatter: isMobile
+                    ? (params) => params.name.replace(" ", "\n")   // MOBILE SPLIT
+                    : "{b}"                                        // PC FULL LABEL
+            }
+        }]
+    };
+
+    chart.setOption(option);
+}
+
+
+
 
         function updateTimelineChart() {
-            const chart = echarts.init(document.getElementById('timeline-chart'));
-            
-            // Generate timeline data from password history
-            const timelineData = generateTimelineData();
+    const isMobile = window.innerWidth < 768;
+    const chart = echarts.init(document.getElementById('timeline-chart'));
 
-            const option = {
-                backgroundColor: 'transparent',
-                textStyle: {
-                    color: '#ffffff'
-                },
-                tooltip: {
-                    trigger: 'axis',
-                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
-                    borderColor: '#00ff41',
-                    textStyle: {
-                        color: '#ffffff'
-                    }
-                },
-                xAxis: {
-                    type: 'category',
-                    data: timelineData.dates,
-                    axisLine: {
-                        lineStyle: {
-                            color: '#333'
-                        }
-                    },
-                    axisLabel: {
-                        color: '#ffffff'
-                    }
-                },
-                yAxis: {
-                    type: 'value',
-                    axisLine: {
-                        lineStyle: {
-                            color: '#333'
-                        }
-                    },
-                    axisLabel: {
-                        color: '#ffffff'
-                    },
-                    splitLine: {
-                        lineStyle: {
-                            color: '#333'
-                        }
-                    }
-                },
-                series: [{
-                    name: 'Passwords Added',
-                    type: 'line',
-                    data: timelineData.counts,
-                    smooth: true,
-                    lineStyle: {
-                        color: '#00ff41',
-                        width: 3
-                    },
-                    itemStyle: {
-                        color: '#00ff41'
-                    },
-                    areaStyle: {
-                        color: 'rgba(0, 255, 65, 0.2)'
-                    }
-                }]
-            };
-            
-            chart.setOption(option);
-        }
+    const timelineData = generateTimelineData();
+
+    const option = {
+        backgroundColor: "transparent",
+        textStyle: { color: "#fff" },
+
+        tooltip: {
+            trigger: "axis",
+            backgroundColor: "rgba(0,0,0,0.85)",
+            borderColor: "#00ff41",
+            confine: isMobile  // <-- ONLY MOBILE
+        },
+
+        xAxis: {
+            type: "category",
+            data: timelineData.dates,
+            axisLabel: {
+                color: "#fff",
+                fontSize: isMobile ? 10 : 14   // SMALLER ON PHONE ONLY
+            },
+            axisLine: { lineStyle: { color: "#333" } }
+        },
+
+        yAxis: {
+            type: "value",
+            axisLabel: {
+                color: "#fff",
+                fontSize: isMobile ? 10 : 14   // PC bigger
+            },
+            axisLine: { lineStyle: { color: "#333" } },
+            splitLine: { lineStyle: { color: "#333" } }
+        },
+
+        series: [{
+            name: "Passwords Added",
+            type: "line",
+            data: timelineData.counts,
+            smooth: true,
+            lineStyle: { color: "#00ff41", width: 3 },
+            itemStyle: { color: "#00ff41" },
+            areaStyle: { color: "rgba(0,255,65,0.2)" }
+        }]
+    };
+
+    chart.setOption(option);
+}
+
 
         function generateTimelineData() {
             const dates = [];
@@ -741,6 +735,48 @@ This report was generated by CyberGuard Password Security Suite.
         document.addEventListener('DOMContentLoaded', function() {
             loadDashboardData();
         });
+        
+// CUSTOM CURSOR (PC)
+document.addEventListener('mousemove', (e) => {
+    const cursorGlow = document.querySelector('.cursor-glow');
+    cursorGlow.style.left = e.clientX - 10 + 'px';
+    cursorGlow.style.top = e.clientY - 10 + 'px';
+});
+
+// MOBILE TAP CURSOR EFFECT
+
+if (/Mobi|Android/i.test(navigator.userAgent)) {
+    const glow = document.querySelector('.cursor-glow');
+
+    // Hide on load
+    glow.style.display = "none";
+
+    function showTapEffect(x, y) {
+        glow.style.left = x - 10 + "px";
+        glow.style.top = y - 10 + "px";
+
+        glow.style.transition = "none";
+        glow.style.opacity = "1";
+        glow.style.display = "block";
+
+        // fade away
+        setTimeout(() => {
+            glow.style.transition = "opacity 1s ease";
+            glow.style.opacity = "0";
+        }, 60);
+
+        // fully hide after fade
+        setTimeout(() => {
+            glow.style.display = "none";
+        }, 1100);
+    }
+
+    document.addEventListener("touchstart", (e) => {
+        const t = e.touches[0];
+        showTapEffect(t.clientX, t.clientY);
+    });
+}
+
     </script>
 </body>
 </html>
