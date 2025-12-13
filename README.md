@@ -1,6 +1,12 @@
 [![CyberGuard Live Demo](https://img.shields.io/badge/Live%20Demo-CyberGuard-green?style=for-the-badge&logo=firefox&logoColor=white)](https://shlokkokk.github.io/cyberGuard/)
 
 # 🔐 CyberGuard - Password Security & Encryption Suite
+🏆 **Webgathon 2025 – Second Runner-Up**
+
+CyberGuard secured **Second Runner-Up** at **Webgathon 2025**, an international online hackathon organized by **KISMATI**.  
+The project was evaluated by industry judges based on **innovation, technical implementation, user experience, real-world impact, and presentation quality**.
+---
+CyberGuard is a fully client-side cybersecurity web application designed to help users analyze, understand, and improve password security. It combines real-time strength analysis, breach detection, entropy-based crack-time estimation, and encrypted password storage - all processed locally to ensure maximum privacy.
 
 ![CyberGuard Banner](resources/hero-cyber.png)
 
@@ -67,3 +73,6 @@
 3. **Monitor Security**: Track your overall security status
 4. **Export Data**: Backup your encrypted password history
 
+> ⚠️ Educational & Defensive Use Only  
+> CyberGuard is designed for learning, awareness, and improving personal security practices.  
+> No passwords or sensitive data are transmitted, logged, or collected.
