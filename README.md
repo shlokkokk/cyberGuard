@@ -35,6 +35,27 @@ CyberGuard is a fully client-side cybersecurity web application designed to help
 - Smart recommendations based on password weaknesses  
 - Automatic warnings for passwords found in real leak databases  
 
+## 🧠 Smart Password Suggestions
+- Automatically suggests stronger variants of weak passwords
+- Preserves memorability while increasing entropy
+- Uses system-safe symbols (`! @ # $ _ -`)
+- One-click replacement for improved security
+- Generated fully client-side (no data exposure)
+### ⚙️ How It Works
+
+1. User enters a password
+2. CyberGuard analyzes:
+   - Length
+   - Character diversity
+   - Entropy
+   - Known weak and leaked patterns
+3. If weak:
+   - Security warnings are shown
+   - Stronger password suggestions are generated
+4. Passwords can be encrypted and stored locally
+5. Dashboard visualizes overall security posture
+
+
 ## 🎯 Security Features
 
 - **Client-side encryption**: All processing happens in your browser

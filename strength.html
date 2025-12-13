@@ -260,6 +260,35 @@
     
     
 }
+/* 
+   Strong Password Suggestions
+    */
+
+.suggestion-pill {
+    background: rgba(0, 255, 65, 0.15);
+    border: 1px solid var(--accent-green);
+    border-radius: 999px;
+    padding: 6px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--accent-green);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.suggestion-pill:hover {
+    background: var(--accent-green);
+    color: #000;
+    box-shadow: 0 0 10px rgba(0, 255, 65, 0.6);
+    transform: translateY(-1px);
+}
+
+.suggestion-pill:active {
+    transform: scale(0.95);
+}
+
+
 
     </style>
 </head>
@@ -365,6 +394,13 @@
                                     <span>Not a common password</span>
                                 </div>
                             </div>
+                        </div>
+                        <!-- Stronger Password Suggestions -->
+                        <div id="suggested-passwords" class="mb-6 hidden">
+                            <h4 class="terminal-text text-sm font-bold mb-3 text-green-400">
+                            Try a stronger version of this password:
+                            </h4>
+                            <div id="suggestion-list" class="flex flex-wrap gap-2"></div>
                         </div>
 
                         <!-- Action Buttons -->
@@ -5536,6 +5572,91 @@ if (/Mobi|Android/i.test(navigator.userAgent)) {
   "jordan92",
 ];
 
+// Safe symbols accepted by most systems
+const SAFE_SYMBOLS = ['!', '@', '#', '$', '_', '-'];
+function generatePasswordSuggestions(password) {
+    if (!password || password.length < 3) return [];
+
+    const suggestions = [];
+    const base = password;
+
+    const substitutions = {
+        'a': '@', 'A': '@',
+        's': '$', 'S': '$',
+        'o': '0', 'O': '0',
+        'i': '1', 'I': '1',
+        'e': '3', 'E': '3'
+    };
+
+    function substituteChars(str) {
+        return str
+            .split('')
+            .map(ch => substitutions[ch] || ch)
+            .join('');
+    }
+
+    function randomCase(str) {
+        return str
+            .split('')
+            .map(ch => Math.random() > 0.5 ? ch.toUpperCase() : ch.toLowerCase())
+            .join('');
+    }
+
+    function randomSymbol() {
+        return SAFE_SYMBOLS[Math.floor(Math.random() * SAFE_SYMBOLS.length)];
+    }
+
+    for (let i = 0; i < 3; i++) {
+        let variant = substituteChars(base);
+        variant = randomCase(variant);
+
+        while (variant.length < 12) {
+            variant += randomSymbol() + Math.floor(Math.random() * 10);
+        }
+
+        variant += randomSymbol();
+        suggestions.push(variant);
+    }
+
+    return suggestions;
+}
+function updateSuggestedPasswords(password) {
+    const box = document.getElementById('suggested-passwords');
+    const list = document.getElementById('suggestion-list');
+
+    list.innerHTML = '';
+    box.classList.add('hidden');
+
+    if (!password) return;
+
+    const score = calculatePasswordStrength(password).score;
+    if (score >= 60) return;
+
+    const suggestions = generatePasswordSuggestions(password);
+    if (!suggestions.length) return;
+
+    suggestions.forEach(s => {
+        const btn = document.createElement('button');
+        btn.className =
+            'px-3 py-1 rounded border border-green-500 text-green-400 ' +
+            'font-mono text-sm hover:bg-green-900 transition';
+
+        btn.textContent = s;
+
+        btn.onclick = () => {
+            document.getElementById('password-input').value = s;
+            updateStrengthDisplay(s);
+            updateSuggestedPasswords(s); // refresh
+        };
+
+        list.appendChild(btn);
+    });
+
+    box.classList.remove('hidden');
+}
+
+
+
         function calculatePasswordStrength(password) {
             let score = 0;
             let criteria = {
@@ -5701,7 +5822,6 @@ if (/Mobi|Android/i.test(navigator.userAgent)) {
             if (password.length > 0 && password.length < 12) {
                 recommendations.push('• Consider using 12+ characters for better security');
             }
-
             const list = document.getElementById('recommendations-list');
             if (recommendations.length === 0) {
                 list.innerHTML = '<li class="text-green-400">• Excellent password! Your security is strong.</li>';
@@ -5833,6 +5953,7 @@ if (/Mobi|Android/i.test(navigator.userAgent)) {
         // Real-time analysis
         document.getElementById('password-input').addEventListener('input', (e) => {
             updateStrengthDisplay(e.target.value);
+            updateSuggestedPasswords(e.target.value);
         });
 
         function analyzePassword() {
