@@ -28,7 +28,7 @@ CyberGuard is a fully client-side cybersecurity web application designed to help
 - Comprehensive security criteria checking
 - Entropy and crack time estimation
 - Interactive radar chart visualization
-- Massive 5,000+ weak-password blacklist to detect leaked/common  passwords  
+- Scalable 5,000+ weak-password blacklist (external JSON) to detect leaked/common passwords  
 - Real-world breach detection with warning popup  
 - Improved scoring engine for accurate strength calculation  
 - Entropy-based crack-time estimation  
